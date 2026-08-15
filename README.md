@@ -371,6 +371,44 @@ O comando `kind load` copia uma imagem para dentro dos nodes do cluster. Ele é
 útil porque os nodes do kind são containers separados do ambiente Docker onde
 você executou o `docker build`.
 
+### Por que usamos `kind load` neste laboratório?
+
+Aqui construímos uma imagem customizada chamada `kind-lab:local`:
+
+```bash
+docker build -t kind-lab:local .
+```
+
+Essa imagem existe apenas no Docker local. Ela não foi publicada no Docker Hub
+nem em outro registry. Por isso, os nodes do kind não conseguem encontrá-la
+automaticamente. O `kind load` copia a imagem do Docker local para os nodes:
+
+```bash
+kind load docker-image kind-lab:local --name kind-lab
+```
+
+Depois disso, o Kubernetes consegue iniciar os Pods usando a imagem local.
+
+### E quando a imagem vem de um registry?
+
+Para imagens externas e públicas, como `nginx:alpine` ou
+`redis:7-alpine`, normalmente não é necessário usar `kind load`. O Kubernetes
+pode baixar a imagem diretamente do registry configurado no nome da imagem:
+
+```yaml
+image: nginx:alpine
+```
+
+Nesse cenário, o node do kind faz o pull da imagem quando precisa criar o Pod.
+
+O `kind load` só seria necessário para uma imagem que não está disponível em um
+registry acessível pelos nodes, como uma imagem customizada ainda não publicada
+ou uma imagem exportada em um arquivo archive.
+
+Para registries privados, além da imagem estar publicada, o cluster também
+precisa ter credenciais para realizar o pull. Nesse caso, podem ser necessários
+um Secret de registry ou configurações adicionais de acesso.
+
 O comando possui duas formas principais:
 
 ```text
@@ -508,6 +546,93 @@ Para observar quais Pods estão sendo selecionados pelo Service:
 kubectl get endpoints hello-kind
 kubectl describe service hello-kind
 ```
+
+## Alternativa: acessar com `kubectl port-forward`
+
+Também é possível acessar a aplicação sem criar o Service e sem configurar
+`extraPortMappings`. Para isso, aplique somente o Deployment:
+
+```bash
+kubectl apply -f manifests/deployment.yaml
+kubectl rollout status deployment/hello-kind
+kubectl port-forward deployment/hello-kind 8080:80
+```
+
+Enquanto esse comando estiver rodando, acesse:
+
+```text
+http://localhost:8080
+```
+
+### Como o `port-forward` funciona?
+
+O `kubectl` usa a conexão com o API Server do Kubernetes para criar um túnel
+temporário até um Pod do Deployment:
+
+```text
+localhost:8080
+    |
+    | túnel criado pelo kubectl
+    v
+API Server do Kubernetes
+    |
+    | encaminhamento da sessão
+    v
+Kubelet do node onde está o Pod
+    |
+    v
+Pod hello-kind:80
+```
+
+O `kubectl` localiza um Pod pertencente ao Deployment, o API Server encaminha a
+sessão até o Kubelet do node e o Kubelet abre a conexão com a porta `80` do Pod.
+
+O `port-forward` usa a conexão do `kubectl` com a API do cluster, mas não usa
+diretamente a porta `6443` para acessar a aplicação. A porta da API serve para
+transportar a sessão até o Pod.
+
+Essa alternativa não utiliza:
+
+- `Service`.
+- `NodePort`.
+- `extraPortMappings`.
+- A porta `30080`.
+
+O encaminhamento é temporário: o terminal precisa permanecer aberto e a
+sessão pode ser encerrada se o Pod for recriado. Além disso, quando o alvo é um
+Deployment com várias réplicas, o `kubectl` encaminha para um único Pod, não
+funciona como um balanceador entre as réplicas.
+
+### Por que este lab usa `extraPortMappings`?
+
+O `port-forward` é excelente para desenvolvimento rápido, testes e diagnóstico
+de um Pod. Porém, este laboratório usa `extraPortMappings` junto com um
+Service `NodePort` para ensinar o caminho de rede do Kubernetes:
+
+```text
+localhost:8080
+  -> node kind:30080
+  -> Service hello-kind:80
+  -> Pod:80
+```
+
+Essa abordagem permite praticar conceitos que não aparecem no
+`port-forward`:
+
+- Como um Service seleciona Pods por labels.
+- Como `port`, `targetPort` e `nodePort` se relacionam.
+- Como uma porta do node pode ser encaminhada para o computador.
+- Como o tráfego chega ao Service antes de alcançar um Pod.
+
+Além disso, o `extraPortMappings` deixa o acesso preparado no cluster e não
+depende de manter um comando `kubectl` rodando em um terminal. Ele é
+especialmente útil com Docker Desktop, em que os nodes kind ficam dentro de
+containers e, dependendo do ambiente, suas portas internas não ficam
+diretamente acessíveis pelo host.
+
+Use `port-forward` quando quiser um acesso temporário e direto a um Pod. Use
+`extraPortMappings` com `NodePort` quando quiser estudar ou simular o caminho
+de rede entre o host, o node, o Service e a aplicação.
 
 ## 6. Alterar a página
 
