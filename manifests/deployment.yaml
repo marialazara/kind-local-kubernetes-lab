@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hello-kind
+  labels:
+    app: hello-kind
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hello-kind
+  template:
+    metadata:
+      labels:
+        app: hello-kind
+    spec:
+      containers:
+        - name: hello-kind
+          image: kind-lab:local
+          ports:
+            - name: http
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          imagePullPolicy: IfNotPresent

@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Página de exemplo para um laboratório local com Kubernetes in Docker."
+    />
+    <title>kind lab | laboratório local</title>
+    <style>
+      :root {
+        --paper: #f4f0e8;
+        --paper-light: #fbfaf6;
+        --ink: #171717;
+        --muted: #716e67;
+        --line: #d8d2c7;
+        --accent: #c7b8ee;
+        --accent-dark: #765ca8;
+        --shadow: 0 18px 45px rgba(29, 25, 18, 0.1);
+      }
+
+      * { box-sizing: border-box; }
+
+      html { scroll-behavior: smooth; }
+
+      body {
+        margin: 0;
+        color: var(--ink);
+        background: var(--paper);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      a { color: inherit; }
+
+      .shell {
+        width: min(1120px, calc(100% - 40px));
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 28px 0;
+      }
+
+      .brand {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        text-decoration: none;
+      }
+
+      .brand-mark {
+        display: grid;
+        width: 38px;
+        height: 38px;
+        place-items: center;
+        border: 1px solid var(--ink);
+        border-radius: 50%;
+        background: var(--ink);
+        color: var(--accent);
+        font-size: 18px;
+      }
+
+      nav { display: flex; gap: 24px; color: var(--muted); font-size: 14px; }
+      nav a { text-decoration: none; }
+      nav a:hover { color: var(--ink); }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.08fr 0.92fr;
+        gap: clamp(40px, 8vw, 110px);
+        align-items: center;
+        min-height: 570px;
+        padding: 60px 0 100px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        margin: 0 0 20px;
+        color: var(--accent-dark);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before { width: 26px; height: 2px; background: var(--accent-dark); content: ""; }
+
+      h1 {
+        max-width: 650px;
+        margin: 0;
+        font-size: clamp(48px, 8vw, 92px);
+        line-height: 0.94;
+        letter-spacing: -0.08em;
+      }
+
+      h1 span { display: block; color: var(--muted); }
+
+      .intro {
+        max-width: 480px;
+        margin: 28px 0 34px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 19px;
+        border: 1px solid var(--ink);
+        border-radius: 999px;
+        background: var(--ink);
+        color: var(--paper-light);
+        font-size: 14px;
+        font-weight: 750;
+        text-decoration: none;
+        transition: transform 160ms ease, background 160ms ease;
+      }
+
+      .button:hover { background: #343434; transform: translateY(-2px); }
+
+      .visual {
+        position: relative;
+        min-height: 390px;
+        padding: 28px;
+        border: 1px solid var(--ink);
+        background: var(--paper-light);
+        box-shadow: var(--shadow);
+        transform: rotate(2.5deg);
+      }
+
+      .visual::before {
+        position: absolute;
+        top: -15px;
+        left: 13%;
+        width: 105px;
+        height: 30px;
+        background: rgba(199, 184, 238, 0.75);
+        content: "";
+        transform: rotate(-5deg);
+      }
+
+      .visual-grid {
+        display: grid;
+        height: 100%;
+        min-height: 332px;
+        place-items: center;
+        border: 1px dashed var(--line);
+        background-image: radial-gradient(var(--line) 1px, transparent 1px);
+        background-size: 19px 19px;
+      }
+
+      .kind-logo { width: min(230px, 65%); height: auto; filter: grayscale(1) contrast(1.4); }
+
+      .label {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        padding: 5px 9px;
+        background: var(--accent);
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        font-weight: 700;
+        transform: rotate(-2.5deg);
+      }
+
+      .details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-bottom: 110px;
+        border: 1px solid var(--line);
+        background: var(--line);
+      }
+
+      .detail { padding: 27px; background: var(--paper); }
+      .detail-number { display: block; margin-bottom: 20px; color: var(--accent-dark); font: 700 13px ui-monospace, monospace; }
+      .detail h2 { margin: 0 0 8px; font-size: 20px; letter-spacing: -0.04em; }
+      .detail p { margin: 0; color: var(--muted); font-size: 14px; }
+
+      footer {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 24px 0 34px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      footer a { color: var(--ink); font-weight: 750; text-underline-offset: 3px; }
+
+      .credits {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .creator-logo {
+        width: 42px;
+        height: 42px;
+        object-fit: contain;
+        border-radius: 50%;
+      }
+
+      .credits-copy { display: grid; gap: 2px; }
+      .credits-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+      @media (max-width: 720px) {
+        .shell { width: min(100% - 28px, 540px); }
+        header { padding: 20px 0; }
+        nav { display: none; }
+        .hero { grid-template-columns: 1fr; min-height: auto; padding: 55px 0 80px; }
+        h1 { font-size: clamp(52px, 16vw, 78px); }
+        .visual { min-height: 300px; }
+        .visual-grid { min-height: 242px; }
+        .details { grid-template-columns: 1fr; margin-bottom: 70px; }
+        footer { flex-direction: column; gap: 18px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <a class="brand" href="#inicio" aria-label="kind lab, início">
+          <span class="brand-mark">k</span>
+          <span>kind / lab</span>
+        </a>
+        <nav aria-label="Navegação principal">
+          <a href="#sobre">sobre o lab</a>
+          <a href="#creditos">créditos</a>
+        </nav>
+      </header>
+
+      <main id="inicio">
+        <section class="hero" aria-labelledby="titulo">
+          <div>
+            <p class="eyebrow">Kubernetes local</p>
+            <h1 id="titulo">Pequeno cluster.<span>Grandes ideias.</span></h1>
+            <p class="intro">
+              Um espaço simples para experimentar, observar e aprender com o
+              Kubernetes rodando dentro de containers.
+            </p>
+            <a class="button" href="#sobre">Explorar o laboratório <span aria-hidden="true">↗</span></a>
+          </div>
+
+          <div class="visual" aria-label="Logo do kind em um cartão de destaque">
+            <div class="visual-grid">
+              <img class="kind-logo" src="https://kind.sigs.k8s.io/logo/logo.png" alt="Logo do kind" />
+            </div>
+            <span class="label">LOCAL_FIRST</span>
+          </div>
+        </section>
+
+        <section class="details" id="sobre" aria-label="Sobre o laboratório">
+          <article class="detail">
+            <span class="detail-number">01 / EXECUTAR</span>
+            <h2>Rápido para começar</h2>
+            <p>Crie um cluster Kubernetes local sem depender de infraestrutura externa.</p>
+          </article>
+          <article class="detail">
+            <span class="detail-number">02 / OBSERVAR</span>
+            <h2>Clareza no caminho</h2>
+            <p>Veja o tráfego passando pelo Service e chegando ao Pod.</p>
+          </article>
+          <article class="detail">
+            <span class="detail-number">03 / APRENDER</span>
+            <h2>Pronto para testar</h2>
+            <p>Um ambiente seguro para errar, ajustar manifests e entender cada etapa.</p>
+          </article>
+        </section>
+      </main>
+
+      <footer id="creditos">
+        <span>Feito para aprender infraestrutura com curiosidade.</span>
+        <div class="credits">
+          <span class="credits-copy">
+            <span class="credits-label">criado por</span>
+            <a href="https://youtube.com/@marialazaradev" target="_blank" rel="noopener noreferrer">@marialazaradev</a>
+          </span>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
